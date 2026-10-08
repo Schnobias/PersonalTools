@@ -13,6 +13,22 @@ public final class BluetoothReceiver extends BroadcastReceiver {
     static final String BATTERY_EXTRA = "android.bluetooth.device.extra.BATTERY_LEVEL";
     static final String CHANNEL = "bluetooth_disconnect";
 
+    static void configure(Context context, boolean enabled) {
+        context.getPackageManager().setComponentEnabledSetting(
+                new ComponentName(context, BluetoothReceiver.class),
+                enabled ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP);
+    }
+
+    static void createChannel(Context context) {
+        NotificationManager manager = context.getSystemService(NotificationManager.class);
+        NotificationChannel channel = new NotificationChannel(CHANNEL, "Bluetooth disconnects", NotificationManager.IMPORTANCE_LOW);
+        channel.setSound(null, null);
+        channel.enableVibration(false);
+        channel.setDescription("Last reported accessory battery when its Bluetooth link disconnects");
+        manager.createNotificationChannel(channel);
+    }
+
     static SharedPreferences store(Context context) {
         return context.getSharedPreferences("bluetooth_battery", Context.MODE_PRIVATE);
     }
@@ -44,7 +60,7 @@ public final class BluetoothReceiver extends BroadcastReceiver {
             if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
             NotificationManager manager = context.getSystemService(NotificationManager.class);
             if (!manager.areNotificationsEnabled()) return;
-            manager.createNotificationChannel(new NotificationChannel(CHANNEL, "Bluetooth disconnects", NotificationManager.IMPORTANCE_DEFAULT));
+            createChannel(context);
             Intent open = new Intent(context, MainActivity.class);
             PendingIntent content = PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             String text = BatteryReading.message(prefs.getInt(key + ".level", -1), prefs.getLong(key + ".time", 0), now);

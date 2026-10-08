@@ -6,7 +6,15 @@ Native Android utilities, starting with Bluetooth battery disconnect reminders. 
 
 Open the app, enable **Disconnect reminders**, and grant Nearby devices (Android 12+) and Notifications (Android 13+). Reconnect your paired headphones, speaker, or other accessory so Android can report its battery. On an ACL disconnect the app posts a notification with the last valid percentage and how long ago it was reported. If there is no report, it explicitly shows battery unavailable. Each device has its own notification and persisted reading; 0% is valid, and a disconnect's unknown (-1) report never overwrites it. Readings stay local, backups are disabled, and you can clear them in the app.
 
-Monitoring defaults off. The receiver exits immediately when disabled or permission is missing. Battery updates and disconnect events wake the process only briefly. This design minimizes app overhead, but physical-device power consumption has not been measured.
+Monitoring defaults off. Its manifest receiver is disabled until reminders are enabled, and turning reminders off disables that component again, avoiding app launches for Bluetooth events while off. When enabled, the receiver exits immediately if permission is missing. Battery updates and disconnect events wake the process only briefly. This design minimizes app overhead, but physical-device power consumption has not been measured.
+
+### Pixel 11 Pro setup
+
+The app now compiles and targets Android 16 (API 36), with modern Android behavior rather than SDK 34 compatibility settings. System-bar and display-cutout insets keep controls clear of the camera cutout and gesture bar. System dark mode uses a black background suited to an OLED screen; the UI has no continuous animation or refresh loop. Java-only APKs contain no native libraries requiring CPU or 16 KB page-size variants.
+
+Keep Pixel app battery usage at its normal **Optimized** setting. No battery-optimization exemption is requested. On a fresh install, disconnect notifications use a silent, non-vibrating low-importance channel; the notification settings button opens that channel directly. Existing channel settings and user choices are preserved on upgrades. The app reports a disabled channel as notifications needing settings, even when notification permission is granted.
+
+Pixel-specific acceptance remains required: no phone is currently connected for installation or testing, so neither this phone's Android build nor accessory battery delivery has been verified. Test screen-off disconnects with Optimized battery usage and Battery Saver, and compare overnight idle use with reminders on and off. Do not infer guaranteed delivery or measured battery savings from the implementation alone.
 
 ### Compatibility limits
 
@@ -18,7 +26,7 @@ Sources: [Android broadcast exceptions](https://developer.android.com/develop/ba
 
 ## Build and verification
 
-Use JDK 17+, Android SDK 34, and the included Gradle wrapper:
+Use JDK 17+, Android SDK 36, and the included Gradle 8.13 wrapper (distribution checksum pinned):
 
 ```powershell
 .\gradlew.bat assembleDebug testDebugUnitTest lintDebug
