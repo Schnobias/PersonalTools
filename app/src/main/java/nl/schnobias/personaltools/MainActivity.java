@@ -114,20 +114,7 @@ public final class MainActivity extends Activity {
         if(!any){TextView empty=label("Your device readings will appear here after they report a battery level.",13,muted,false);empty.setPadding(dp(14),dp(14),dp(14),dp(14));empty.setBackground(shape(surface,outline,16));page.addView(empty);}
 
         gap(page,24);
-        QuickNotes notes=new QuickNotes(this,this::render);
-        LinearLayout noteCard=column();noteCard.setPadding(dp(17),dp(17),dp(17),dp(17));noteCard.setBackground(shape(surface,outline,22));
-        noteCard.addView(label("Quick Notes",20,ink,true));gap(noteCard,6);
-        noteCard.addView(label("Keep useful text close. Save a reminder, packing list or snippet, then copy it in a tap.",14,muted,false));
-        Button add=actionButton("+ New note",false);add.setOnClickListener(v->notes.edit(null));noteCard.addView(add);
-        List<QuickNotes.Note> saved=notes.list();
-        if(saved.isEmpty())noteCard.addView(label("Your notes stay on this phone. No account needed.",13,muted,false));
-        for(QuickNotes.Note note:saved){
-            gap(noteCard,12);TextView preview=label(note.text,15,ink,false);preview.setMaxLines(4);preview.setEllipsize(android.text.TextUtils.TruncateAt.END);noteCard.addView(preview);
-            LinearLayout actions=row();Button copy=actionButton("Copy",false);copy.setOnClickListener(v->notes.copy(note));actions.addView(copy,new LinearLayout.LayoutParams(0,dp(48),1));
-            Button edit=actionButton("Edit",false);edit.setOnClickListener(v->notes.edit(note));actions.addView(edit,new LinearLayout.LayoutParams(0,dp(48),1));
-            Button delete=actionButton("Delete",false);delete.setOnClickListener(v->notes.delete(note));actions.addView(delete,new LinearLayout.LayoutParams(0,dp(48),1));noteCard.addView(actions);
-        }
-        page.addView(noteCard);
+        page.addView(label("Quick Answer",20,ink,true)); gap(page,6); page.addView(label("Select text in another app, then choose Quick Answer to ask Gemini Nano on this phone.",14,muted,false)); Button answer=actionButton("Open Quick Answer",false);answer.setOnClickListener(v->startActivity(new Intent(this,QuickAnswerActivity.class)));page.addView(answer);
         gap(page,24); LinearLayout future=column(); future.setPadding(dp(17),dp(16),dp(17),dp(16)); future.setBackground(shape(dark?Color.parseColor("#191F1B"):Color.parseColor("#F2F6F3"),0,20));
         future.addView(label("MORE TOOLS,\nWHEN YOU NEED THEM.",11,muted,true)); gap(future,5);
         future.addView(label("This space is ready to grow with you.",14,ink,false));page.addView(future);
@@ -139,4 +126,5 @@ public final class MainActivity extends Activity {
     private void requestRequiredPermissions(){List<String> p=new ArrayList<>();if(Build.VERSION.SDK_INT>=31&&checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)!=PackageManager.PERMISSION_GRANTED)p.add(Manifest.permission.BLUETOOTH_CONNECT);if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)p.add(Manifest.permission.POST_NOTIFICATIONS);if(!p.isEmpty())requestPermissions(p.toArray(new String[0]),1);else render();}
     @Override public void onRequestPermissionsResult(int code,String[] permissions,int[] results){super.onRequestPermissionsResult(code,permissions,results);render();}
 }
+
 

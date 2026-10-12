@@ -10,6 +10,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".QuickAnswerActivity" android:label="Quick Answer" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PROCESS_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+        </activity>
         <receiver android:name=".BluetoothReceiver" android:enabled="false" android:exported="true">
             <intent-filter>
                 <action android:name="android.bluetooth.device.action.BATTERY_LEVEL_CHANGED" />
