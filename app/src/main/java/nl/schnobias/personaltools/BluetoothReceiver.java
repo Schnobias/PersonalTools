@@ -65,7 +65,7 @@ public final class BluetoothReceiver extends BroadcastReceiver {
             PendingIntent content = PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             String text = BatteryReading.message(prefs.getInt(key + ".level", -1), prefs.getLong(key + ".time", 0), now);
             Notification notification = new Notification.Builder(context, CHANNEL)
-                    .setSmallIcon(R.drawable.ic_battery).setContentTitle(name + " disconnected")
+                    .setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle(name + " disconnected")
                     .setContentText(text).setStyle(new Notification.BigTextStyle().bigText(text))
                     .setContentIntent(content).setAutoCancel(true)
                     .setVisibility(Notification.VISIBILITY_PRIVATE).build();

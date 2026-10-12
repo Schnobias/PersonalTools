@@ -1,8 +1,10 @@
 # Personal Tools
 
-Native Android utilities, starting with Bluetooth battery disconnect reminders. Java and Android framework UI; Android 8.0+; no runtime libraries, network permission, scanning, polling, alarms, wake locks, jobs, or persistent service.
+Native Android utilities, starting with Bluetooth battery disconnect reminders. The expandable home screen uses native Android views and a vector brand mark; Java and Android framework only; Android 8.0+; no runtime libraries, network permission, scanning, polling, alarms, wake locks, jobs, or persistent service.
 
 ## Bluetooth battery reminders
+
+The home screen is designed as a home for tools that can be added over time: clear brand header, active-tool count, self-contained tool cards, recent-device readings, and a quiet reserved space for future additions.
 
 Open the app, enable **Disconnect reminders**, and grant Nearby devices (Android 12+) and Notifications (Android 13+). Reconnect your paired headphones, speaker, or other accessory so Android can report its battery. On an ACL disconnect the app posts a notification with the last valid percentage and how long ago it was reported. If there is no report, it explicitly shows battery unavailable. Each device has its own notification and persisted reading; 0% is valid, and a disconnect's unknown (-1) report never overwrites it. Readings stay local, backups are disabled, and you can clear them in the app.
 
