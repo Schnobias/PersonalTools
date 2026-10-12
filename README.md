@@ -45,3 +45,6 @@ Before relying on reminders, test on a physical phone with real Bluetooth access
 5. Compare idle battery use with reminders enabled and disabled over comparable periods. No physical-device battery or Bluetooth acceptance is claimed by the build checks.
 
 Battery notifications now arrive immediately when Android reports a valid reading. Reports at 30% or less sound on the first low report and subsequent decreases; duplicate or rising readings stay quiet. Disconnects at a last known 30% or less also use the audible channel. Sound still respects phone volume, DND, and channel settings. No polling is added.
+
+## Quick Notes
+Save, edit, copy and delete local text notes. Notes are stored separately from Bluetooth readings, so clearing readings preserves your notes. Each note supports up to 4,000 characters. Delete asks for confirmation. This tool needs no permissions, network access, timers or background work. Backups remain disabled; copying a note puts it on the Android clipboard.
