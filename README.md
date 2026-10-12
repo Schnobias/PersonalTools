@@ -43,3 +43,5 @@ Before relying on reminders, test on a physical phone with real Bluetooth access
 3. Repeat with a second device and one that has no battery reporting; verify independent notifications and unavailable text.
 4. Test permission denial, disabled reminders, reconnects, reboot, and force-stop/reopen. Unknown reports must retain the previous reading.
 5. Compare idle battery use with reminders enabled and disabled over comparable periods. No physical-device battery or Bluetooth acceptance is claimed by the build checks.
+
+Battery notifications now arrive immediately when Android reports a valid reading. Reports at 30% or less sound on the first low report and subsequent decreases; duplicate or rising readings stay quiet. Disconnects at a last known 30% or less also use the audible channel. Sound still respects phone volume, DND, and channel settings. No polling is added.

@@ -83,7 +83,7 @@ public final class MainActivity extends Activity {
         TextView badge=label("READY",10,accent,true); badge.setPadding(dp(9),dp(6),dp(9),dp(6)); badge.setBackground(shape(dark?Color.parseColor("#203B2C"):Color.parseColor("#EAF5EE"),0,30)); cardHead.addView(badge);
         card.addView(cardHead); gap(card,14);
         card.addView(label("Know where your headphones stand.",15,ink,true)); gap(card,5);
-        card.addView(label("See the last reported battery when a paired device disconnects. Everything stays on your phone.",14,muted,false)); gap(card,16);
+        card.addView(label("Immediate battery updates, plus sound at 30% or less. Disconnect reminders included.",14,muted,false)); gap(card,16);
         LinearLayout control=row();
         LinearLayout status=column();
         boolean nearby=Build.VERSION.SDK_INT<31||checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)==PackageManager.PERMISSION_GRANTED;
@@ -101,7 +101,7 @@ public final class MainActivity extends Activity {
             gap(card,12); Button grant=actionButton(!nearby?"Grant nearby devices access":"Review notification settings",false);
             grant.setOnClickListener(v->{if(!nearby)requestRequiredPermissions();else startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,BluetoothReceiver.CHANNEL));});card.addView(grant);
         }
-        page.addView(card); gap(page,20);
+        Button alerts=actionButton("Low battery sound settings",false); alerts.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,BluetoothReceiver.LOW_CHANNEL))); card.addView(alerts); page.addView(card); gap(page,20);
 
         LinearLayout section=row(); section.addView(label("RECENT BATTERY",11,muted,true)); page.addView(section); gap(page,10);
         Map<String,?> all=BluetoothReceiver.store(this).getAll(); List<String> keys=new ArrayList<>(all.keySet()); Collections.sort(keys); boolean any=false;
@@ -124,3 +124,4 @@ public final class MainActivity extends Activity {
     private void requestRequiredPermissions(){List<String> p=new ArrayList<>();if(Build.VERSION.SDK_INT>=31&&checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)!=PackageManager.PERMISSION_GRANTED)p.add(Manifest.permission.BLUETOOTH_CONNECT);if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)p.add(Manifest.permission.POST_NOTIFICATIONS);if(!p.isEmpty())requestPermissions(p.toArray(new String[0]),1);else render();}
     @Override public void onRequestPermissionsResult(int code,String[] permissions,int[] results){super.onRequestPermissionsResult(code,permissions,results);render();}
 }
+

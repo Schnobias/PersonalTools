@@ -12,6 +12,7 @@ public final class BluetoothReceiver extends BroadcastReceiver {
     static final String BATTERY_ACTION = "android.bluetooth.device.action.BATTERY_LEVEL_CHANGED";
     static final String BATTERY_EXTRA = "android.bluetooth.device.extra.BATTERY_LEVEL";
     static final String CHANNEL = "bluetooth_disconnect";
+    static final String LOW_CHANNEL = "bluetooth_low_battery";
 
     static void configure(Context context, boolean enabled) {
         context.getPackageManager().setComponentEnabledSetting(
@@ -27,6 +28,11 @@ public final class BluetoothReceiver extends BroadcastReceiver {
         channel.enableVibration(false);
         channel.setDescription("Last reported accessory battery when its Bluetooth link disconnects");
         manager.createNotificationChannel(channel);
+        NotificationChannel low = new NotificationChannel(LOW_CHANNEL, "Low Bluetooth battery (30% or less)", NotificationManager.IMPORTANCE_HIGH);
+        low.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI,
+                new android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION).build());
+        low.enableVibration(true);
+        manager.createNotificationChannel(low);
     }
 
     static SharedPreferences store(Context context) {
@@ -50,12 +56,16 @@ public final class BluetoothReceiver extends BroadcastReceiver {
             String name = device.getName();
             if (name == null || name.trim().isEmpty()) name = "Bluetooth device";
             long now = System.currentTimeMillis();
+            boolean update = BATTERY_ACTION.equals(action);
+            int previous = prefs.getInt(key + ".level", -1);
+            int percentage = intent.getIntExtra(BATTERY_EXTRA, -1);
+            boolean audible = false;
             if (BATTERY_ACTION.equals(action)) {
-                int percentage = intent.getIntExtra(BATTERY_EXTRA, -1);
                 // Disconnect often emits -1; retain the previous valid reading, including 0%.
                 if (BatteryReading.valid(percentage)) prefs.edit().putInt(key + ".level", percentage)
                         .putLong(key + ".time", now).putString(key + ".name", name).apply();
-                return;
+                if (!BatteryReading.valid(percentage)) return;
+                audible = percentage <= 30 && (previous < 0 || previous > percentage);
             }
             if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
             NotificationManager manager = context.getSystemService(NotificationManager.class);
@@ -64,13 +74,14 @@ public final class BluetoothReceiver extends BroadcastReceiver {
             Intent open = new Intent(context, MainActivity.class);
             PendingIntent content = PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             String text = BatteryReading.message(prefs.getInt(key + ".level", -1), prefs.getLong(key + ".time", 0), now);
-            Notification notification = new Notification.Builder(context, CHANNEL)
-                    .setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle(name + " disconnected")
+            if (!update) audible = prefs.getInt(key + ".level", -1) >= 0 && prefs.getInt(key + ".level", -1) <= 30;
+            Notification notification = new Notification.Builder(context, audible ? LOW_CHANNEL : CHANNEL)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle(name + (update ? (audible ? " — low battery" : " — battery update") : " disconnected"))
                     .setContentText(text).setStyle(new Notification.BigTextStyle().bigText(text))
                     .setContentIntent(content).setAutoCancel(true)
                     .setVisibility(Notification.VISIBILITY_PRIVATE).build();
             // A distinct stable tag prevents devices replacing one another's notifications.
-            manager.notify(key, 1, notification);
+            manager.notify(key, update ? 2 : 1, notification);
         } catch (SecurityException ignored) {
             // Permissions can be revoked while handling an event.
         }
