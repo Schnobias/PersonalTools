@@ -1,0 +1,97 @@
+package nl.schnobias.personaltools;
+
+import android.Manifest;
+import android.app.*;
+import android.bluetooth.BluetoothDevice;
+import android.content.*;
+import android.content.pm.PackageManager;
+import android.os.Build;
+
+public final class BluetoothReceiver extends BroadcastReceiver {
+    // AOSP system broadcast; not a public SDK contract. No hidden-method reflection.
+    static final String BATTERY_ACTION = "android.bluetooth.device.action.BATTERY_LEVEL_CHANGED";
+    static final String BATTERY_EXTRA = "android.bluetooth.device.extra.BATTERY_LEVEL";
+    static final String CHANNEL = "bluetooth_disconnect";
+    static final String LOW_CHANNEL = "bluetooth_low_battery";
+
+    static void configure(Context context, boolean enabled) {
+        context.getPackageManager().setComponentEnabledSetting(
+                new ComponentName(context, BluetoothReceiver.class),
+                enabled ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP);
+    }
+
+    static void createChannel(Context context) {
+        NotificationManager manager = context.getSystemService(NotificationManager.class);
+        NotificationChannel channel = new NotificationChannel(CHANNEL, "Bluetooth disconnects", NotificationManager.IMPORTANCE_LOW);
+        channel.setSound(null, null);
+        channel.enableVibration(false);
+        channel.setDescription("Last reported accessory battery when its Bluetooth link disconnects");
+        manager.createNotificationChannel(channel);
+        NotificationChannel low = new NotificationChannel(LOW_CHANNEL, "Low Bluetooth battery", NotificationManager.IMPORTANCE_HIGH);
+        low.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI,
+                new android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION).build());
+        low.enableVibration(true);
+        manager.createNotificationChannel(low);
+    }
+
+    static SharedPreferences store(Context context) {
+        return context.getSharedPreferences("bluetooth_battery", Context.MODE_PRIVATE);
+    }
+
+    @Override public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+        if (!BATTERY_ACTION.equals(action) && !BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) return;
+        SharedPreferences prefs = store(context);
+        if (!prefs.getBoolean("enabled", false)) return;
+        if (Build.VERSION.SDK_INT >= 31 && context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) return;
+        BluetoothDevice device = Build.VERSION.SDK_INT >= 33
+                ? intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class)
+                : intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+        if (device == null) return;
+        try {
+            // Only paired devices, with device identity supplied by the protected system broadcast.
+            if (device.getBondState() != BluetoothDevice.BOND_BONDED) return;
+            String key = device.getAddress();
+            String name = device.getName();
+            if (name == null || name.trim().isEmpty()) name = "Bluetooth device";
+            long now = System.currentTimeMillis();
+            boolean update = BATTERY_ACTION.equals(action);
+            int previous = prefs.getInt(key + ".level", -1);
+            int percentage = intent.getIntExtra(BATTERY_EXTRA, -1);
+            int threshold = BatteryNotificationPolicy.threshold(prefs.getInt("threshold", 30));
+            boolean audible = false;
+            if (BATTERY_ACTION.equals(action)) {
+                // Disconnect often emits -1; retain the previous valid reading, including 0%.
+                if (BatteryReading.valid(percentage)) prefs.edit().putInt(key + ".level", percentage)
+                        .putLong(key + ".time", now).putString(key + ".name", name).apply();
+                if (!BatteryReading.valid(percentage)) return;
+                audible = percentage <= threshold && (previous < 0 || previous > percentage);
+            }
+            int level = prefs.getInt(key + ".level", -1);
+            if (!BatteryNotificationPolicy.shouldNotify(prefs.getBoolean("only_low", false), level, threshold,
+                    !update, prefs.getBoolean("always_disconnect", false))) {
+                NotificationManager manager = context.getSystemService(NotificationManager.class);
+                manager.cancel(key, 1); manager.cancel(key, 2);
+                return;
+            }
+            if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
+            NotificationManager manager = context.getSystemService(NotificationManager.class);
+            if (!manager.areNotificationsEnabled()) return;
+            createChannel(context);
+            Intent open = new Intent(context, MainActivity.class);
+            PendingIntent content = PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+            String text = BatteryReading.message(prefs.getInt(key + ".level", -1), prefs.getLong(key + ".time", 0), now);
+            if (!update) audible = BatteryReading.valid(level) && level <= threshold;
+            Notification notification = new Notification.Builder(context, audible ? LOW_CHANNEL : CHANNEL)
+                    .setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle(name + (update ? (audible ? " — low battery" : " — battery update") : " disconnected"))
+                    .setContentText(text).setStyle(new Notification.BigTextStyle().bigText(text))
+                    .setContentIntent(content).setAutoCancel(true)
+                    .setVisibility(Notification.VISIBILITY_PRIVATE).build();
+            // A distinct stable tag prevents devices replacing one another's notifications.
+            manager.notify(key, update ? 2 : 1, notification);
+        } catch (SecurityException ignored) {
+            // Permissions can be revoked while handling an event.
+        }
+    }
+}
