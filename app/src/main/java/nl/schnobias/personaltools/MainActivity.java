@@ -103,6 +103,9 @@ public final class MainActivity extends Activity {
         }
         Switch onlyLow=new Switch(this);onlyLow.setText("Only notify at or below threshold");onlyLow.setTextColor(ink);onlyLow.setChecked(BluetoothReceiver.store(this).getBoolean("only_low",false));
         onlyLow.setOnCheckedChangeListener((button,on)->BluetoothReceiver.store(this).edit().putBoolean("only_low",on).apply());card.addView(onlyLow);
+        Switch disconnect=new Switch(this);disconnect.setText("Always notify on disconnect");disconnect.setTextColor(ink);
+        disconnect.setChecked(BluetoothReceiver.store(this).getBoolean("always_disconnect",false));
+        disconnect.setOnCheckedChangeListener((button,on)->BluetoothReceiver.store(this).edit().putBoolean("always_disconnect",on).apply());card.addView(disconnect);
         int threshold=BatteryNotificationPolicy.threshold(BluetoothReceiver.store(this).getInt("threshold",30));
         TextView thresholdLabel=label("Battery threshold: "+threshold+"%",14,ink,true);card.addView(thresholdLabel);
         SeekBar thresholdSlider=new SeekBar(this);thresholdSlider.setMax(100);thresholdSlider.setProgress(threshold);thresholdSlider.setContentDescription("Battery notification threshold, percent");
@@ -110,7 +113,7 @@ public final class MainActivity extends Activity {
             public void onProgressChanged(SeekBar bar,int value,boolean user){thresholdLabel.setText("Battery threshold: "+value+"%");if(user)BluetoothReceiver.store(MainActivity.this).edit().putInt("threshold",value).apply();}
             public void onStartTrackingTouch(SeekBar bar){} public void onStopTrackingTouch(SeekBar bar){}
         });card.addView(thresholdSlider);
-        card.addView(label("Applies to battery updates and disconnect reminders. Unknown batteries are skipped when enabled. Sound uses the same threshold.",12,muted,false));
+        card.addView(label("Always notify on disconnect bypasses the filter, including unknown batteries. Above-threshold disconnects are silent. Sound uses the selected threshold.",12,muted,false));
         Button alerts=actionButton("Low battery sound settings",false); alerts.setOnClickListener(v -> startActivity(new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName()).putExtra(Settings.EXTRA_CHANNEL_ID,BluetoothReceiver.LOW_CHANNEL))); card.addView(alerts); page.addView(card); gap(page,20);
 
         LinearLayout section=row(); section.addView(label("RECENT BATTERY",11,muted,true)); page.addView(section); gap(page,10);
@@ -129,13 +132,14 @@ public final class MainActivity extends Activity {
         future.addView(label("MORE TOOLS,\nWHEN YOU NEED THEM.",11,muted,true)); gap(future,5);
         future.addView(label("This space is ready to grow with you.",14,ink,false));page.addView(future);
         gap(page,18); LinearLayout footer=row(); footer.addView(label("PRIVATE BY DESIGN",10,muted,true),new LinearLayout.LayoutParams(0,-2,1));
-        TextView clear=label("Clear readings",11,muted,true);footer.addView(clear);clear.setOnClickListener(v->{BluetoothReceiver.store(this).edit().clear().putBoolean("enabled",BluetoothReceiver.store(this).getBoolean("enabled",false)).putBoolean("only_low",BluetoothReceiver.store(this).getBoolean("only_low",false)).putInt("threshold",BluetoothReceiver.store(this).getInt("threshold",30)).apply();render();}); page.addView(footer);
+        TextView clear=label("Clear readings",11,muted,true);footer.addView(clear);clear.setOnClickListener(v->{BluetoothReceiver.store(this).edit().clear().putBoolean("enabled",BluetoothReceiver.store(this).getBoolean("enabled",false)).putBoolean("only_low",BluetoothReceiver.store(this).getBoolean("only_low",false)).putInt("threshold",BluetoothReceiver.store(this).getInt("threshold",30)).putBoolean("always_disconnect",BluetoothReceiver.store(this).getBoolean("always_disconnect",false)).apply();render();}); page.addView(footer);
     }
 
     private Button actionButton(String text,boolean primary){Button b=new Button(this);b.setText(text);b.setAllCaps(false);b.setTextSize(13);b.setTextColor(primary?Color.WHITE:accent);if(Build.VERSION.SDK_INT>=21)b.setBackground(shape(primary?accent:Color.TRANSPARENT,primary?0:outline,14));return b;}
     private void requestRequiredPermissions(){List<String> p=new ArrayList<>();if(Build.VERSION.SDK_INT>=31&&checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)!=PackageManager.PERMISSION_GRANTED)p.add(Manifest.permission.BLUETOOTH_CONNECT);if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)p.add(Manifest.permission.POST_NOTIFICATIONS);if(!p.isEmpty())requestPermissions(p.toArray(new String[0]),1);else render();}
     @Override public void onRequestPermissionsResult(int code,String[] permissions,int[] results){super.onRequestPermissionsResult(code,permissions,results);render();}
 }
+
 
 
 

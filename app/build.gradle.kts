@@ -6,8 +6,8 @@ android {
         applicationId = "nl.schnobias.personaltools"
         minSdk = 26
         targetSdk = 36
-        versionCode = 6
-        versionName = "0.6.0"
+        versionCode = 7
+        versionName = "0.7.0"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -15,4 +15,5 @@ android {
     }
 }
 dependencies { implementation("com.google.mlkit:genai-prompt:1.0.0-beta4"); testImplementation("junit:junit:4.13.2") }
+
 

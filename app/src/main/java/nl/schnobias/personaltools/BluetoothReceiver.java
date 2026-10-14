@@ -69,7 +69,8 @@ public final class BluetoothReceiver extends BroadcastReceiver {
                 audible = percentage <= threshold && (previous < 0 || previous > percentage);
             }
             int level = prefs.getInt(key + ".level", -1);
-            if (!BatteryNotificationPolicy.shouldNotify(prefs.getBoolean("only_low", false), level, threshold)) {
+            if (!BatteryNotificationPolicy.shouldNotify(prefs.getBoolean("only_low", false), level, threshold,
+                    !update, prefs.getBoolean("always_disconnect", false))) {
                 NotificationManager manager = context.getSystemService(NotificationManager.class);
                 manager.cancel(key, 1); manager.cancel(key, 2);
                 return;

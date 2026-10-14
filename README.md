@@ -52,3 +52,5 @@ Select text in an Android app and choose Quick Answer (possibly in the overflow 
 
 
 Battery filtering: enable Only notify at or below threshold to suppress battery-update and disconnect notifications above your chosen 0–100% threshold. Unknown battery levels are also skipped in this mode. Readings still update locally. Default threshold is 30%, filtering defaults off. Audible alerts use the chosen threshold. Clearing battery readings preserves these settings.
+
+Always notify on disconnect: this optional switch bypasses the battery threshold filter for disconnect events, including unknown battery readings. Immediate battery updates still obey the filter. Above-threshold and unknown disconnects stay silent. The option defaults off and survives clearing saved readings.
