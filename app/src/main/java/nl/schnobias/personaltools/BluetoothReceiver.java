@@ -28,7 +28,7 @@ public final class BluetoothReceiver extends BroadcastReceiver {
         channel.enableVibration(false);
         channel.setDescription("Last reported accessory battery when its Bluetooth link disconnects");
         manager.createNotificationChannel(channel);
-        NotificationChannel low = new NotificationChannel(LOW_CHANNEL, "Low Bluetooth battery (30% or less)", NotificationManager.IMPORTANCE_HIGH);
+        NotificationChannel low = new NotificationChannel(LOW_CHANNEL, "Low Bluetooth battery", NotificationManager.IMPORTANCE_HIGH);
         low.setSound(android.provider.Settings.System.DEFAULT_NOTIFICATION_URI,
                 new android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION).build());
         low.enableVibration(true);
@@ -59,13 +59,20 @@ public final class BluetoothReceiver extends BroadcastReceiver {
             boolean update = BATTERY_ACTION.equals(action);
             int previous = prefs.getInt(key + ".level", -1);
             int percentage = intent.getIntExtra(BATTERY_EXTRA, -1);
+            int threshold = BatteryNotificationPolicy.threshold(prefs.getInt("threshold", 30));
             boolean audible = false;
             if (BATTERY_ACTION.equals(action)) {
                 // Disconnect often emits -1; retain the previous valid reading, including 0%.
                 if (BatteryReading.valid(percentage)) prefs.edit().putInt(key + ".level", percentage)
                         .putLong(key + ".time", now).putString(key + ".name", name).apply();
                 if (!BatteryReading.valid(percentage)) return;
-                audible = percentage <= 30 && (previous < 0 || previous > percentage);
+                audible = percentage <= threshold && (previous < 0 || previous > percentage);
+            }
+            int level = prefs.getInt(key + ".level", -1);
+            if (!BatteryNotificationPolicy.shouldNotify(prefs.getBoolean("only_low", false), level, threshold)) {
+                NotificationManager manager = context.getSystemService(NotificationManager.class);
+                manager.cancel(key, 1); manager.cancel(key, 2);
+                return;
             }
             if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return;
             NotificationManager manager = context.getSystemService(NotificationManager.class);
@@ -74,7 +81,7 @@ public final class BluetoothReceiver extends BroadcastReceiver {
             Intent open = new Intent(context, MainActivity.class);
             PendingIntent content = PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             String text = BatteryReading.message(prefs.getInt(key + ".level", -1), prefs.getLong(key + ".time", 0), now);
-            if (!update) audible = prefs.getInt(key + ".level", -1) >= 0 && prefs.getInt(key + ".level", -1) <= 30;
+            if (!update) audible = BatteryReading.valid(level) && level <= threshold;
             Notification notification = new Notification.Builder(context, audible ? LOW_CHANNEL : CHANNEL)
                     .setSmallIcon(R.drawable.ic_launcher_foreground).setContentTitle(name + (update ? (audible ? " — low battery" : " — battery update") : " disconnected"))
                     .setContentText(text).setStyle(new Notification.BigTextStyle().bigText(text))

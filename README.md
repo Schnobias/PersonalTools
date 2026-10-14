@@ -50,3 +50,5 @@ Battery notifications now arrive immediately when Android reports a valid readin
 ## Quick Answer
 Select text in an Android app and choose Quick Answer (possibly in the overflow menu). Uses Google's ML Kit Prompt API and Gemini Nano in AICore for local inference. A foreground screen provides the answer and a copy button; no answer history is saved. Device availability is checked at runtime. Prepare model requests consent before AICore downloads files. Inputs are limited to 6,000 characters; answers to 256 tokens. Leaving cancels pending inference. No cloud inference fallback. Some apps do not expose Android PROCESS_TEXT actions. Quick Notes UI removed; existing saved notes are retained privately but are no longer accessible through this version.
 
+
+Battery filtering: enable Only notify at or below threshold to suppress battery-update and disconnect notifications above your chosen 0–100% threshold. Unknown battery levels are also skipped in this mode. Readings still update locally. Default threshold is 30%, filtering defaults off. Audible alerts use the chosen threshold. Clearing battery readings preserves these settings.
